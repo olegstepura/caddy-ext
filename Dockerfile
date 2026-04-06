@@ -28,6 +28,9 @@ RUN xcaddy build ${CADDY_VERSION} \
 
 FROM caddy:${CADDY_VERSION}-alpine
 
+# Enable scanning of stopped containers by default so Sablier functions out-of-the-box
+ENV CADDY_DOCKER_SCAN_STOPPED_CONTAINERS=true
+
 # Copy the built binary from builder
 COPY --from=builder /build/caddy /usr/bin/caddy
 
