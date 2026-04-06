@@ -12,6 +12,9 @@ This custom image is built from `caddy:alpine` and includes the following plugin
 * **[Cloudflare DNS](https://github.com/caddy-dns/cloudflare):** Enables automated ACME DNS-01 challenges using Cloudflare, perfect for internal services or wildcards.
 * **[Caddy L4](https://github.com/mholt/caddy-l4):** Adds Layer 4 (TCP/UDP) proxying capabilities.
 * **[Caddy RateLimit](https://github.com/mholt/caddy-ratelimit):** Provides HTTP rate limiting functionality to protect your services.
+* **[Sablier](https://github.com/sablierapp/sablier)**: Integrates scale-to-zero capabilities. Intercepts requests to sleeping containers, wakes them up on-demand, and proxies the traffic once healthy.
+
+Note on Sablier: To ensure Caddy discovers offline containers and allows Sablier to wake them up, this image hardcodes `CADDY_DOCKER_SCAN_STOPPED_CONTAINERS=true` by default.
 
 ## Image Registry
 
@@ -45,16 +48,38 @@ services:
       - caddy_data:/data
     restart: unless-stopped
 
+  # Sablier daemon that actually starts/stops the containers
+  sablier:
+    image: sablierapp/sablier:latest
+    command: start --provider.name=docker --provider.auto-stop-on-startup=true
+    networks:
+      - caddy
+    volumes:
+      # Requires read/write access to control container states
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
   # Example service routed by Caddy
   whoami:
     image: traefik/whoami
     networks:
       - caddy
     labels:
+      # -- Sablier Docker Provider config --
+      # Allows the Sablier daemon to manage this container
+      sablier.enable: "true"
+      sablier.group: whoami
+
+      # -- Caddy Routing & TLS --
       caddy: whoami.yourdomain.com
-      caddy.reverse_proxy: "{{upstreams 80}}"
-      # Using Cloudflare DNS for TLS
       caddy.tls.dns: cloudflare {env.CLOUDFLARE_API_TOKEN}
+
+      # Use a route block to ensure Sablier checks run before proxying
+      caddy.route: "/*"
+      caddy.route.0_sablier: ""
+      caddy.route.0_sablier.group: whoami
+      caddy.route.0_sablier.dynamic: "" # Serves a loading screen while waking
+      caddy.route.1_reverse_proxy: "{{upstreams 80}}"
 
 networks:
   caddy:
