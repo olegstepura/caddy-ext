@@ -23,9 +23,13 @@ RUN xcaddy build ${CADDY_VERSION} \
     --with github.com/lucaslorentz/caddy-docker-proxy/v2 \
     --with github.com/caddy-dns/cloudflare \
     --with github.com/mholt/caddy-l4 \
-    --with github.com/mholt/caddy-ratelimit
+    --with github.com/mholt/caddy-ratelimit \
+    --with github.com/sablierapp/sablier-caddy-plugin
 
 FROM caddy:${CADDY_VERSION}-alpine
+
+# Enable scanning of stopped containers by default so Sablier functions out-of-the-box
+ENV CADDY_DOCKER_SCAN_STOPPED_CONTAINERS=true
 
 # Copy the built binary from builder
 COPY --from=builder /build/caddy /usr/bin/caddy
