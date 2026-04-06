@@ -79,7 +79,7 @@ services:
       caddy.route.0_sablier: ""
       caddy.route.0_sablier.group: whoami
       caddy.route.0_sablier.dynamic: "" # Serves a loading screen while waking
-      caddy.route.1_reverse_proxy: "{{upstreams 80}}"
+      caddy.route.1_reverse_proxy: "http://whoami:80"
 
 networks:
   caddy:
