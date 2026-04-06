@@ -23,7 +23,8 @@ RUN xcaddy build ${CADDY_VERSION} \
     --with github.com/lucaslorentz/caddy-docker-proxy/v2 \
     --with github.com/caddy-dns/cloudflare \
     --with github.com/mholt/caddy-l4 \
-    --with github.com/mholt/caddy-ratelimit
+    --with github.com/mholt/caddy-ratelimit \
+    --with github.com/sablierapp/sablier-caddy-plugin
 
 FROM caddy:${CADDY_VERSION}-alpine
 
