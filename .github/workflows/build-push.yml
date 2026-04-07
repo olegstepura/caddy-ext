@@ -21,12 +21,13 @@ jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
 
-    # Required permissions to push to GHCR
+    # Required permissions to push to GHCR and upload security scans
     permissions:
       contents: read
       packages: write
       attestations: write
       id-token: write
+      security-events: write
 
     steps:
       - name: Checkout repository
@@ -64,7 +65,28 @@ jobs:
           context: .
           # Only push the image if it's not a pull request
           push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }} 
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Run Trivy Scanner
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        env:
+          # Passes GHCR credentials to Trivy in case it needs to scan the remote image after a push
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # steps.meta.outputs.version dynamically gets the correct tag (edge, pr-1, v1.0.0)
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      # Upload Results to GitHub UI
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
