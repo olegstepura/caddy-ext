@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to the Container registry
         # Only log in if we are not in a pull request (PRs shouldn't push images)
