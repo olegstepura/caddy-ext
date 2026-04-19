@@ -8,7 +8,7 @@ The image is built automatically and published to the GitHub Container Registry 
 
 This custom image is built from `caddy:alpine` and includes the following plugins:
 
-* **[Caddy Docker Proxy](https://github.com/lucaslorentz/caddy-docker-proxy/v2):** Automatically generates Caddyfile configurations based on Docker container labels.
+* **[Caddy Docker Proxy](https://github.com/lucaslorentz/caddy-docker-proxy):** Automatically generates Caddyfile configurations based on Docker container labels.
 * **[Cloudflare DNS](https://github.com/caddy-dns/cloudflare):** Enables automated ACME DNS-01 challenges using Cloudflare, perfect for internal services or wildcards.
 * **[Caddy L4](https://github.com/mholt/caddy-l4):** Adds Layer 4 (TCP/UDP) proxying capabilities.
 * **[Caddy RateLimit](https://github.com/mholt/caddy-ratelimit):** Provides HTTP rate limiting functionality to protect your services.
