@@ -28,6 +28,8 @@ docker pull ghcr.io/olegstepura/caddy-ext:latest
 
 Since this image acts as a Docker proxy, you need to mount the Docker socket. Here is a basic `docker-compose.yml` example showing how to deploy this custom Caddy image and use the Cloudflare DNS plugin.
 
+The Cloudflare API token is passed via a [Docker secret](https://docs.docker.com/compose/how-tos/use-secrets/) and read directly from the mounted file using Caddy's `{file.*}` placeholder — the token never lands in the environment or in `docker inspect` output.
+
 ```yaml
 version: "3.9"
 
@@ -39,13 +41,13 @@ services:
       - "443:443"
     environment:
       - CADDY_INGRESS_NETWORKS=caddy
-      # Required for the Cloudflare DNS plugin
-      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
     networks:
       - caddy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - caddy_data:/data
+    secrets:
+      - caddy_cloudflare_api_token
     restart: unless-stopped
 
   # Sablier daemon that actually starts/stops the containers
@@ -72,7 +74,8 @@ services:
 
       # -- Caddy Routing & TLS --
       caddy: whoami.yourdomain.com
-      caddy.tls.dns: cloudflare {env.CLOUDFLARE_API_TOKEN}
+      # Token is read from the mounted secret file at request time
+      caddy.tls.dns: cloudflare {file./run/secrets/caddy_cloudflare_api_token}
 
       # Use a route block to ensure Sablier checks run before proxying
       caddy.route: "/*"
@@ -87,6 +90,33 @@ networks:
 
 volumes:
   caddy_data:
+
+secrets:
+  caddy_cloudflare_api_token:
+    # Provide the token via a file on the host (recommended for Swarm/Compose)
+    file: ./secrets/caddy_cloudflare_api_token
+    # ...or source it from an existing external Docker secret:
+    # external: true
+```
+
+### Reusing the secret across sites
+
+If you maintain a base Caddyfile alongside the docker-proxy (e.g. mounted at `/etc/caddy/Caddyfile`), you can wrap the DNS config in a snippet and import it per site. This keeps the secret path in one place:
+
+```caddyfile
+(cloudflare_tls) {
+  tls {
+    dns cloudflare {file./run/secrets/caddy_cloudflare_api_token}
+  }
+}
+```
+
+Then from container labels:
+
+```yaml
+labels:
+  caddy: whoami.yourdomain.com
+  caddy.import: cloudflare_tls
 ```
 
 ## Building Locally
