@@ -1,7 +1,7 @@
 # Build custom Caddy with caddy-docker-proxy and Cloudflare DNS plugin
 # Based on: https://github.com/lucaslorentz/caddy-docker-proxy
 
-ARG CADDY_VERSION=2.11.2
+ARG CADDY_VERSION=2.11.3
 
 FROM golang:alpine AS builder
 
